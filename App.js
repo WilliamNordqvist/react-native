@@ -15,11 +15,14 @@ import {
   RemoveAllLocalS,
 } from "./helpers/LocalStorageHelper";
 
+import countryApiFetch from "./helpers/CountryApiFetch";
+
 export default function App() {
   const [ssn, setSsN] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("Choose a country");
+  const [countryList, setCountryList] = useState(null);
 
   useEffect(() => {
     if (GetFromLocalS("ssn")) {
@@ -36,8 +39,10 @@ export default function App() {
     if (GetFromLocalS("country")) {
       GetFromLocalS("country").then((result) => setCountry(JSON.parse(result)));
     }
-
-  }, []);
+    if (countryList === null) {
+      countryApiFetch().then((result) => setCountryList(result));
+    }
+  }, [])
 
   const onSubmit = () => {
     RemoveAllLocalS();
@@ -80,16 +85,22 @@ export default function App() {
 
       <View style={styles.input}>
         <Picker
-        selectedValue={country}
-        onValueChange={(itemValue, itemIndex) =>{setCountry(itemValue); SaveToLocalS("country", itemValue);}}
+          selectedValue={country}
+          onValueChange={(itemValue, itemIndex) => {
+            setCountry(itemValue);
+            SaveToLocalS("country", itemValue);
+          }}
         >
-          <Picker.Item label="Choose a country" value="Choose a country" />
-          <Picker.Item label="Java" value="java" />
-          <Picker.Item label="JavaScript" value="js" />
-          <Picker.Item label="1" value="1" />
-          <Picker.Item label="2" value="2" />
-          <Picker.Item label="3" value="3" />
-          <Picker.Item label="4" value="4" />
+        <Picker.Item label="Choose a country" value="Choose a country" />
+          {countryList ? (
+            countryList.map((country) => {
+              return (
+                <Picker.Item label={country} value={country} key={country} />
+              );
+            })
+          ) : (
+            <Picker.Item label="Loading" value="Loading" />
+          )}
         </Picker>
       </View>
 
