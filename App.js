@@ -2,6 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
+  Modal,
   Text,
   View,
   TextInput,
@@ -16,6 +17,7 @@ import {
 } from "./helpers/LocalStorageHelper";
 
 import countryApiFetch from "./helpers/CountryApiFetch";
+import Validations from "./helpers/Validations";
 
 export default function App() {
   const [ssn, setSsN] = useState("");
@@ -23,6 +25,9 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("Choose a country");
   const [countryList, setCountryList] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  let { error, errMessages } = Validations(ssn, phoneNumber, email, country);
 
   useEffect(() => {
     if (GetFromLocalS("ssn")) {
@@ -42,10 +47,20 @@ export default function App() {
     if (countryList === null) {
       countryApiFetch().then((result) => setCountryList(result));
     }
-  }, [])
+  }, []);
 
   const onSubmit = () => {
+    let UserObj = { ssn, phoneNumber, email, country };
+    if (error) {
+      setShowModal(true);
+    }
     RemoveAllLocalS();
+    console.log("successful");
+    console.log(UserObj)
+    setSsN("")
+    setPhoneNumber("")
+    setEmail("")
+    setCountry("Choose a country")
   };
 
   return (
@@ -91,7 +106,7 @@ export default function App() {
             SaveToLocalS("country", itemValue);
           }}
         >
-        <Picker.Item label="Choose a country" value="Choose a country" />
+          <Picker.Item label="Choose a country" value="Choose a country" />
           {countryList ? (
             countryList.map((country) => {
               return (
@@ -106,6 +121,35 @@ export default function App() {
 
       <View style={styles.submitBtn}>
         <Button title="SUBMIT" color="#1E90FF" onPress={onSubmit} />
+      </View>
+
+      <View style={styles.modalView}>
+        <Modal animationType="slide" visible={showModal}>
+          <View
+            style={{
+              marginTop: "10%",
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "10%",
+            }}
+          >
+            {error
+              ? errMessages.map((message) => (
+                  <Text style={styles.errorMess} key={message}>
+                    *{message}
+                  </Text>
+                ))
+              : null}
+            <View style={{ position: "absolute", bottom: 20, width: "100%" }}>
+              <Button
+                title="CANCEL"
+                color="#FF0000"
+                onPress={() => setShowModal(false)}
+              />
+            </View>
+          </View>
+        </Modal>
       </View>
 
       <StatusBar style="auto" />
@@ -132,5 +176,11 @@ const styles = StyleSheet.create({
 
   submitBtn: {
     width: "100%",
+  },
+
+  errorMess: {
+    textAlign: "center",
+    color: "red",
+    marginVertical: "5%",
   },
 });
